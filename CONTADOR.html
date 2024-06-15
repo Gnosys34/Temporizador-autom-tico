@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuenta Atrás Múltiple</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: rgba(25, 25, 25, 255);
+            color: white;
+        }
+        h1 {
+            color: #00ff00; /* Verde tipo terminal antigua */
+        }
+        .contador {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            position: relative;
+            background-color: rgba(50, 50, 50, 255); /* Fondo de los contadores */
+        }
+        .contador.rojo-intenso {
+            background-color: #ff0000;
+            color: white;
+        }
+        .contador h3 {
+            margin: 0 0 5px;
+        }
+        .eliminar {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #ff6666;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Creador de Contadores</h1>
+    <form id="formulario">
+        <label for="titulo">Título:</label>
+        <input type="text" id="titulo" required>
+        <label for="fecha">Fecha:</label>
+        <input type="datetime-local" id="fecha" required>
+        <button type="submit">Agregar Cuenta Atrás</button>
+    </form>
+    <div id="contadores"></div>
+
+    <script>
+        document.getElementById('formulario').addEventListener('submit', function(event) {
+            event.preventDefault();
+            agregarContador();
+        });
+
+        function guardarContadores() {
+            const contadores = document.querySelectorAll('.contador');
+            const datos = [];
+            contadores.forEach(contador => {
+                const titulo = contador.querySelector('h3').textContent;
+                const fecha = contador.getAttribute('data-fecha');
+                datos.push({ titulo, fecha });
+            });
+            localStorage.setItem('contadores', JSON.stringify(datos));
+        }
+
+        function cargarContadores() {
+            const datos = JSON.parse(localStorage.getItem('contadores')) || [];
+            datos.forEach(({ titulo, fecha }) => {
+                agregarContador(titulo, new Date(fecha));
+            });
+        }
+
+        function agregarContador(titulo = null, fecha = null) {
+            if (!titulo && !fecha) {
+                titulo = document.getElementById('titulo').value;
+                fecha = new Date(document.getElementById('fecha').value);
+            }
+
+            const contadores = document.getElementById('contadores');
+
+            const contadorDiv = document.createElement('div');
+            contadorDiv.className = 'contador';
+            contadorDiv.setAttribute('data-fecha', fecha);
+
+            const tituloH3 = document.createElement('h3');
+            tituloH3.textContent = titulo;
+            contadorDiv.appendChild(tituloH3);
+
+            const tiempoP = document.createElement('p');
+            contadorDiv.appendChild(tiempoP);
+
+            const botonEliminar = document.createElement('button');
+            botonEliminar.className = 'eliminar';
+            botonEliminar.textContent = 'Eliminar';
+            botonEliminar.addEventListener('click', function() {
+                contadores.removeChild(contadorDiv);
+                guardarContadores();
+            });
+            contadorDiv.appendChild(botonEliminar);
+
+            contadores.appendChild(contadorDiv);
+
+            function actualizarContador() {
+                const ahora = new Date();
+                const diferencia = new Date(fecha) - ahora;
+
+                if (diferencia <= 0) {
+                    contadorDiv.classList.add('rojo-intenso');
+                    tiempoP.textContent = '';
+                    clearInterval(intervalo);
+                    return;
+                }
+
+                const segundos = Math.floor((diferencia / 1000) % 60);
+                const minutos = Math.floor((diferencia / 1000 / 60) % 60);
+                const horas = Math.floor((diferencia / (1000 * 60 * 60)) % 24);
+                const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24) % 7);
+                const semanas = Math.floor(diferencia / (1000 * 60 * 60 * 24 * 7) % 4);
+                const meses = Math.floor(diferencia / (1000 * 60 * 60 * 24 * 30));
+
+                tiempoP.textContent = `${meses} meses ${semanas} semanas ${dias} días ${horas} horas ${minutos} minutos ${segundos} segundos`;
+            }
+
+            const intervalo = setInterval(actualizarContador, 1000);
+            actualizarContador();
+
+            guardarContadores();
+        }
+
+        window.onload = cargarContadores;
+    </script>
+</body>
+</html>
